@@ -18,10 +18,25 @@
           #141e30
         ); /* Chrome 10-25, Safari 5.1-6 */
         background: linear-gradient(to bottom, #243b55, #141e30);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .captions {
+        position: absolute;
+        top: 1em;
+        left: 1em;
+        color: white;
+        padding: 0.2em 1em;
+        font-size: 12px;
+        background: #141e30;
+        opacity: 0.5;
+        border-radius: 10px;
       }
     </style>
   </head>
   <body>
+    <div class="captions">
+      <p><code>[Esc]</code> - Restart</p>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

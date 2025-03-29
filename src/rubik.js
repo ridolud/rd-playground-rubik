@@ -69,12 +69,12 @@ export function Rubik() {
     const geometry = new RoundedBoxGeometry(1, 1, 1, 12, 0.1);
     const setFaces = (x, y, z) => {
       var colors = Array(6).fill(0xffffff);
-      if (x == 1) colors[0] = 0xff0000;
-      if (z == 1) colors[4] = 0x00ff00;
+      if (x == 1) colors[0] = 0xb71234;
+      if (z == 1) colors[4] = 0x009b48;
       if (y == 1) colors[2] = 0xffffff;
-      if (x == -1) colors[1] = 0xffa500;
-      if (z == -1) colors[5] = 0xffff00;
-      if (y == -1) colors[3] = 0x0ffff0;
+      if (x == -1) colors[1] = 0xff5800;
+      if (z == -1) colors[5] = 0xffd500;
+      if (y == -1) colors[3] = 0x0046ad;
       return colors.map(
         (color) =>
           new THREE.MeshPhysicalMaterial({
