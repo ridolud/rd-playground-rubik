@@ -3,6 +3,7 @@ import {
   OrbitControls,
   RoundedBoxGeometry,
 } from "three/examples/jsm/Addons.js";
+import { TextGeometry, FontLoader } from "three/examples/jsm/Addons.js";
 
 export function Rubik() {
   const scene = new THREE.Scene();
@@ -17,6 +18,9 @@ export function Rubik() {
   const controls = new OrbitControls(camera, renderer.domElement);
 
   const cubes = [];
+  const facesHelper = [];
+  var isShowFaceHelper = false;
+  var moveHistory = [];
   let rotationDirection;
   let selectedCube;
   let pivot;
@@ -49,6 +53,7 @@ export function Rubik() {
     setupLights();
     setupCamera();
     createCubes();
+    createFacesHelper();
   }
 
   function animate() {
@@ -63,6 +68,82 @@ export function Rubik() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     render();
+  }
+
+  function createFacesHelper() {
+    const loader = new FontLoader();
+    loader.load(
+      "https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
+      (font) => {
+        const sides = [
+          {
+            text: "F",
+            position: { x: 0, y: 0, z: 3 },
+            rotation: { x: 0, y: 0, z: 0 },
+          }, // Front
+          {
+            text: "B",
+            position: { x: 0, y: 0, z: -3 },
+            rotation: { x: 0, y: Math.PI, z: 0 },
+          }, // Back
+          {
+            text: "L",
+            position: { x: -3, y: 0, z: 0 },
+            rotation: { x: 0, y: Math.PI / 2, z: 0 },
+          }, // Left
+          {
+            text: "R",
+            position: { x: 3, y: 0, z: 0 },
+            rotation: { x: 0, y: -Math.PI / 2, z: 0 },
+          }, // Right
+          {
+            text: "U",
+            position: { x: 0, y: 3, z: 0 },
+            rotation: { x: -Math.PI / 2, y: 0, z: 0 },
+          }, // Up
+          {
+            text: "D",
+            position: { x: 0, y: -3, z: 0 },
+            rotation: { x: Math.PI / 2, y: 0, z: 0 },
+          }, // Down
+        ];
+
+        sides.forEach((side) => {
+          const geometry = new TextGeometry(side.text, {
+            font: font,
+            size: 1,
+            depth: 0.02,
+          });
+          geometry.center();
+          const material = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            flatShading: true,
+            opacity: 0,
+            transparent: true,
+          });
+          const textMesh = new THREE.Mesh(geometry, material);
+          textMesh.position.set(
+            side.position.x,
+            side.position.y,
+            side.position.z
+          );
+          textMesh.rotation.set(
+            side.rotation.x,
+            side.rotation.y,
+            side.rotation.z
+          );
+          facesHelper.push(textMesh);
+          scene.add(textMesh);
+        });
+      }
+    );
+  }
+
+  function onToggleFacesHelper() {
+    isShowFaceHelper = !isShowFaceHelper;
+    facesHelper.forEach((face) => {
+      face.material.opacity = isShowFaceHelper ? 0.8 : 0;
+    });
   }
 
   function createCubes() {
@@ -120,6 +201,8 @@ export function Rubik() {
     scene.add(pivot);
   }
 
+  function addMoveHistory() {}
+
   function rotatingAnimate() {
     let d = 0;
 
@@ -146,7 +229,6 @@ export function Rubik() {
             children[i].applyMatrix4(groupMatrix);
           }
           scene.remove(pivot);
-          console.log(scene.children.length);
         }
 
         clearInterval(timer);
@@ -317,5 +399,6 @@ export function Rubik() {
     resetValues,
     onMouseDown,
     onMouseMove,
+    onToggleFacesHelper,
   };
 }
