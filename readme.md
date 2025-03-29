@@ -1,5 +1,6 @@
 # Rubik's Cube Game
 
+![Rubik's Cube Screenshot](public/screenshot.png)
 This repository contains a 3D Rubik's Cube game built using Three.js. It provides an interactive experience where users can manipulate the cube and solve it just like a physical Rubik's Cube.
 
 ## Features
