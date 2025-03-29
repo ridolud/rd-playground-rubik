@@ -31,6 +31,28 @@
         opacity: 0.5;
         border-radius: 10px;
       }
+      .moves-history {
+        position: absolute;
+        bottom: 1em;
+        left: 1em;
+        color: white;
+        padding: 0.2em 1em;
+        font-size: 12px;
+        background: #141e30;
+        opacity: 0.5;
+        border-radius: 10px;
+
+        ol.items {
+          max-height: 200px;
+          /* overflow: hidden; */
+          overflow-y: scroll;
+        }
+
+        .items > li:last-child {
+          font-weight: bold;
+          color: yellow;
+        }
+      }
     </style>
   </head>
   <body>
@@ -38,6 +60,11 @@
       <p><code>[Esc]</code> - Restart</p>
       <p><code>[F]</code> - Toggle faces helper</p>
       <p><code>[Ctrl + Z]</code> - Undo move</p>
+      <p><code>[S]</code> - Scramble</p>
+    </div>
+    <div class="moves-history">
+      <ol class="items"></ol>
+      <p>Moves history</p>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

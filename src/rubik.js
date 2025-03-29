@@ -17,9 +17,13 @@ export function Rubik() {
   const render = () => renderer.render(scene, camera);
   const controls = new OrbitControls(camera, renderer.domElement);
 
+  const animatedSpeed = 10;
   const cubes = [];
   const facesHelper = [];
   var isShowFaceHelper = false;
+  var isAnimate = false;
+  let currentMove;
+  let onMoveFinish;
   var moveHistory = [];
   let rotationDirection;
   let selectedCube;
@@ -183,27 +187,106 @@ export function Rubik() {
 
   function predictSelectedFace() {
     let group;
+    let face;
     if (rotationDirection === "y" || rotationDirection === "-y") {
       group = cubes.filter(
         (x) => Math.abs(x.position.y - selectedCube.object.position.y) < 0.05
       );
+      face =
+        selectedCube.object.position.y > 0
+          ? "U"
+          : selectedCube.object.position.y < 0
+          ? "D"
+          : "E";
     } else if (rotationDirection === "x" || rotationDirection === "-x") {
       group = cubes.filter(
         (x) => Math.abs(x.position.x - selectedCube.object.position.x) < 0.05
       );
+      face =
+        selectedCube.object.position.x > 0
+          ? "R"
+          : selectedCube.object.position.x < 0
+          ? "L"
+          : "M";
     } else if (rotationDirection === "z" || rotationDirection === "-z") {
       group = cubes.filter(
         (x) => Math.abs(x.position.z - selectedCube.object.position.z) < 0.05
       );
+      face =
+        selectedCube.object.position.z > 0
+          ? "F"
+          : selectedCube.object.position.z < 0
+          ? "B"
+          : "S";
     }
+
+    pivot = new THREE.Object3D();
+    pivot.add(...group);
+    scene.add(pivot);
+
+    const isCounterClockwise = rotationDirection.startsWith("-");
+    // NOTE: need to reverse CounterClockwise from perspective relative to face angle
+    if (["M", "E", "D", "B", "L"].includes(face)) {
+      currentMove = face + (isCounterClockwise ? "'" : "");
+    } else {
+      currentMove = face + (!isCounterClockwise ? "'" : "");
+    }
+  }
+
+  function predictSelectedFaceFormMoveCode(move) {
+    let group;
+    const face = move[0];
+    const isCounterClockwise = move.includes("'");
+
+    switch (face) {
+      case "U": // Up face
+        group = cubes.filter((cube) => Math.abs(cube.position.y - 1) < 0.05);
+        rotationDirection = isCounterClockwise ? "-y" : "y";
+        break;
+      case "D": // Down face
+        group = cubes.filter((cube) => Math.abs(cube.position.y + 1) < 0.05);
+        rotationDirection = isCounterClockwise ? "y" : "-y";
+        break;
+      case "L": // Left face
+        group = cubes.filter((cube) => Math.abs(cube.position.x + 1) < 0.05);
+        rotationDirection = isCounterClockwise ? "x" : "-x";
+        break;
+      case "R": // Right face
+        group = cubes.filter((cube) => Math.abs(cube.position.x - 1) < 0.05);
+        rotationDirection = isCounterClockwise ? "-x" : "x";
+        break;
+      case "F": // Front face
+        group = cubes.filter((cube) => Math.abs(cube.position.z - 1) < 0.05);
+        rotationDirection = isCounterClockwise ? "-z" : "z";
+        break;
+      case "B": // Back face
+        group = cubes.filter((cube) => Math.abs(cube.position.z + 1) < 0.05);
+        rotationDirection = isCounterClockwise ? "z" : "-z";
+        break;
+      case "E": // Middle layer (horizontal, between U and D)
+        group = cubes.filter((cube) => Math.abs(cube.position.y) < 0.05);
+        // NOTE: need to reverse CounterClockwise from perspective relative to face angle
+        rotationDirection = !isCounterClockwise ? "-y" : "y";
+        break;
+      case "M": // Middle layer (vertical, between L and R)
+        group = cubes.filter((cube) => Math.abs(cube.position.x) < 0.05);
+        rotationDirection = isCounterClockwise ? "x" : "-x";
+        break;
+      case "S": // Middle layer (vertical, between F and B)
+        group = cubes.filter((cube) => Math.abs(cube.position.z) < 0.05);
+        rotationDirection = isCounterClockwise ? "-z" : "z";
+        break;
+      default:
+        console.error("Invalid move code");
+        return;
+    }
+
     pivot = new THREE.Object3D();
     pivot.add(...group);
     scene.add(pivot);
   }
 
-  function addMoveHistory() {}
-
-  function rotatingAnimate() {
+  function rotatingAnimate(time, finishCallback) {
     let d = 0;
 
     const axis = rotationDirection.replace("-", "");
@@ -232,8 +315,9 @@ export function Rubik() {
         }
 
         clearInterval(timer);
+        finishCallback();
       }
-    }, 10);
+    }, time);
   }
 
   function resetView() {
@@ -247,28 +331,37 @@ export function Rubik() {
     let x = currentPosition.x;
     let y = currentPosition.y;
     let z = currentPosition.z;
-    let timer = setInterval(() => {
-      x += stepX;
-      y += stepY;
-      z += stepZ;
-      camera.position.x = x;
-      camera.position.y = y;
-      camera.position.z = z;
-      if (
-        x <= 5.1 &&
-        x >= 4.9 &&
-        y <= 5.1 &&
-        y >= 4.9 &&
-        z <= 5.1 &&
-        z >= 4.9
-      ) {
-        camera.position.x = 5;
-        camera.position.y = 5;
-        camera.position.z = 5;
-        render();
-        clearInterval(timer);
-      }
-    }, 10);
+    let timer = setInterval(
+      () => {
+        x += stepX;
+        y += stepY;
+        z += stepZ;
+        camera.position.x = x;
+        camera.position.y = y;
+        camera.position.z = z;
+        if (
+          x <= 5.1 &&
+          x >= 4.9 &&
+          y <= 5.1 &&
+          y >= 4.9 &&
+          z <= 5.1 &&
+          z >= 4.9
+        ) {
+          camera.position.x = 5;
+          camera.position.y = 5;
+          camera.position.z = 5;
+          render();
+          clearInterval(timer);
+        }
+      },
+      !moveHistory.length
+        ? animatedSpeed
+        : moveHistory.length * (animatedSpeed / 2)
+    );
+
+    if (moveHistory.length) {
+      onUndoMove(true);
+    }
   }
 
   const resetValues = () => {
@@ -383,10 +476,68 @@ export function Rubik() {
     if (!intersects.length) return;
 
     predictDirection(selectedCube.point, intersects[0]?.point);
-    if (rotationDirection != undefined) {
+    if (rotationDirection != undefined && !isAnimate) {
+      isAnimate = true;
       predictSelectedFace();
-      rotatingAnimate();
+      rotatingAnimate(animatedSpeed, () => {
+        moveHistory.push(currentMove);
+        currentMove = undefined;
+        if (onMoveFinish != undefined) onMoveFinish(moveHistory);
+        isAnimate = false;
+      });
       selectedCube = undefined;
+    }
+  }
+
+  function onUndoMove(undoAll = false) {
+    if (moveHistory.length) {
+      const lastMove = moveHistory[moveHistory.length - 1];
+      isAnimate = true;
+      predictSelectedFaceFormMoveCode(lastMove);
+      rotatingAnimate(animatedSpeed / 2, () => {
+        moveHistory.pop();
+        if (onMoveFinish != undefined) onMoveFinish(moveHistory);
+        isAnimate = false;
+        if (undoAll) onUndoMove(undoAll);
+      });
+    }
+  }
+
+  function onMoveFinishListener(callback) {
+    onMoveFinish = callback;
+  }
+
+  function onScrambling() {
+    const next = Math.floor(Math.random() * (20 - 12 + 1)) + 12;
+    if (!isAnimate) {
+      const facesCode = "MSELRUDFB";
+      const randomFace = () =>
+        facesCode[Math.floor(Math.random() * facesCode.length)] +
+        (Math.random() < 0.5 ? "'" : "");
+      const scrambleMoves = [];
+      for (let i = 0; i < next; i++) {
+        scrambleMoves.push(randomFace());
+      }
+      isAnimate = true;
+      function animateScramble(moveIndex = 0) {
+        const move = scrambleMoves[moveIndex];
+        if (!move) {
+          isAnimate = false;
+          return;
+        }
+        const reverseMove = move.includes("'")
+          ? move.replace("'", "")
+          : move + "'";
+        predictSelectedFaceFormMoveCode(reverseMove);
+        rotatingAnimate(animatedSpeed / 2, () => {
+          moveHistory.push(move);
+          if (onMoveFinish != undefined) onMoveFinish(moveHistory);
+          isAnimate = false;
+          animateScramble(moveIndex + 1);
+        });
+      }
+
+      animateScramble();
     }
   }
 
@@ -400,5 +551,8 @@ export function Rubik() {
     onMouseDown,
     onMouseMove,
     onToggleFacesHelper,
+    onMoveFinishListener,
+    onUndoMove,
+    onScrambling,
   };
 }
